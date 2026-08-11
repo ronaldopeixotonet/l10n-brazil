@@ -221,6 +221,43 @@ class ResCompany(models.Model):
         domain="[('piscofins_type', '=', 'company')]",
     )
 
+    piscofins_id_domain = fields.Json(compute="_compute_piscofins_id_domain")
+    tax_ipi_id_domain = fields.Json(compute="_compute_tax_ipi_id_domain")
+    tax_icms_id_domain = fields.Json(compute="_compute_tax_icms_id_domain")
+
+    @api.depends("tax_framework")
+    def _compute_piscofins_id_domain(self):
+        sn_id = self.env.ref("l10n_br_fiscal.tax_pis_cofins_simples_nacional").id
+        for rec in self:
+            base = [("piscofins_type", "=", "company")]
+            if rec.tax_framework == TAX_FRAMEWORK_NORMAL:
+                rec.piscofins_id_domain = base + [("id", "!=", sn_id)]
+            else:
+                rec.piscofins_id_domain = base + [("id", "=", sn_id)]
+
+    @api.depends("tax_framework")
+    def _compute_tax_ipi_id_domain(self):
+        outros_id = self.env.ref("l10n_br_fiscal.tax_ipi_outros").id
+        ipi_group_id = self.env.ref("l10n_br_fiscal.tax_group_ipi").id
+        for rec in self:
+            if rec.tax_framework == TAX_FRAMEWORK_NORMAL:
+                rec.tax_ipi_id_domain = [
+                    ("id", "!=", outros_id),
+                    ("tax_group_id", "=", ipi_group_id),
+                ]
+            else:
+                rec.tax_ipi_id_domain = [("id", "=", outros_id)]
+
+    @api.depends("tax_framework")
+    def _compute_tax_icms_id_domain(self):
+        icms_group_id = self.env.ref("l10n_br_fiscal.tax_group_icms").id
+        icmssn_group_id = self.env.ref("l10n_br_fiscal.tax_group_icmssn").id
+        for rec in self:
+            if rec.tax_framework == TAX_FRAMEWORK_NORMAL:
+                rec.tax_icms_id_domain = [("tax_group_id", "=", icms_group_id)]
+            else:
+                rec.tax_icms_id_domain = [("tax_group_id", "=", icmssn_group_id)]
+
     tax_cofins_wh_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.tax",
         string="Default COFINS RET",
