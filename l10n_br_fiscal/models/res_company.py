@@ -388,7 +388,6 @@ class ResCompany(models.Model):
             "custom_tax": True,
             "tax_id": tax.id,
             "cst_id": tax.cst_out_id.id,
-            "company_id": self._origin.id,
         }
 
         if tax_def:
