@@ -103,7 +103,12 @@ class DataAbstract(models.AbstractModel):
     @api.model
     def _name_search(self, name, domain=None, operator="ilike", limit=None, order=None):
         if operator == "ilike" and not (name or "").strip():
-            domain = []
+            domain = domain or []
+            return self._search(
+                domain,
+                limit=limit,
+                order=order,
+            )
         elif operator in ("ilike", "like", "=", "=like", "=ilike"):
             domain = expression.AND(
                 [
@@ -120,6 +125,7 @@ class DataAbstract(models.AbstractModel):
             return self._search(
                 domain,
                 limit=limit,
+                order=order,
             )
 
         return super()._name_search(
